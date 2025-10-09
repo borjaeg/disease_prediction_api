@@ -152,7 +152,7 @@ def predict():
         return jsonify({"error": "Internal server error", "detail": str(e)}), 500
 
 # --------------------------- Main ---------------------------
-if __name__ == '__main__':
+#if __name__ == '__main__':
     # For local dev only. In production run with gunicorn/uvicorn, e.g.:
     # gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:5001 app:app
-    app.run(host='0.0.0.0', port=5001, debug=True, threaded=True)
+#    app.run(host='0.0.0.0', port=5001, debug=True, threaded=True)
