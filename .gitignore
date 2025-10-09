@@ -1,0 +1,94 @@
+# Python
+# ===============================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-file.txt
+
+# Unit test / coverage reports
+.pytest_cache/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.hypothesis/
+.cache/
+
+# PyInstaller/Nuitka/PyOxidizer
+# These are usually created in the same directory as the script that is packaged
+# but can be in a different path.
+# for PyInstaller:
+*.spec
+# for PyOxidizer:
+__pypackages__/
+# for Nuitka:
+*.bin
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Black-related
+.ipynb_checkpoints/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter Notebook related
+.ipynb_checkpoints
+
+# VS Code directory (optional, but often helpful)
+.vscode/
+
+# End of Python section
+# ===============================================
+
+
+# macOS
+# ===============================================
+.DS_Store
+.Trashes
+ehthumbs.db
+.Spotlight-V100
+.TemporaryItems
+.fseventsd
+Icon?
+._*
+
+# Thumbnails
+._*
+
+# Logs
+/log
+/logs
+/tmp
+
+# Application-specific
+com.apple.timemachine.donotpresent
+Desktop.ini
+
+# End of macOS section
+# ===============================================
