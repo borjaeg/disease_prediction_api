@@ -14,9 +14,9 @@ import timm
 
 # --------------------------- Config ---------------------------
 CLASS_NAMES: List[str] = ['Botrytis', 'Healthy', 'Oidium']
-BACKBONE_NAME = os.getenv('BACKBONE_NAME', 'ft-models/eva02_small_patch14_336.mim_in22k_ft_in1k')
-BACKBONE_PATH = os.getenv('BACKBONE_PATH', 'ft-models/eva02_small_patch14_336.mim_in22k_ft_in1k.0-backbone-NextGenBioPestSimp_2_100-False-True.pth')
-HEAD_PATH     = os.getenv('HEAD_PATH',     'ft-models/eva02_small_patch14_336.mim_in22k_ft_in1k.0-head-NextGenBioPestSimp_2_100-False-True.pth')
+#BACKBONE_NAME = os.getenv('BACKBONE_NAME', 'ft-models/eva02_small_patch14_336.mim_in22k_ft_in1k')
+BACKBONE_PATH = os.getenv('BACKBONE_PATH', 'ft-models/convnextv2_atto.fcmae_ft_in1k.0-quantized-NextGenBioPestSimp_2_100-False-True.pth')
+#HEAD_PATH     = os.getenv('HEAD_PATH',     'ft-models/eva02_small_patch14_336.mim_in22k_ft_in1k.0-head-NextGenBioPestSimp_2_100-False-True.pth')
 TOP_K = int(os.getenv('TOP_K', '3'))
 MAX_CONTENT_MB = float(os.getenv('MAX_CONTENT_MB', '15'))
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -43,28 +43,29 @@ class LinearClassifier(nn.Module):
         return self.mlp_head(x)
 
 class Predictor:
-    def __init__(self, backbone_name: str, backbone_path: str, head_path: str | None):
-        logger.info(f"Loading backbone '{backbone_name}' on {DEVICE}...")
-        self.backbone = timm.create_model(backbone_name, pretrained=False, num_classes=0)
-        state = torch.load(backbone_path, map_location='cpu')
-        self.backbone.load_state_dict(state, strict=True)
-        self.backbone.to(DEVICE).eval()
+    def __init__(self, backbone_path: str):
+        logger.info(f"Loading backbone '{backbone_path}' on {DEVICE}...")
+        #self.backbone = timm.create_model(backbone_name, pretrained=False, num_classes=0)
+        #state = torch.load(backbone_path, map_location='cpu')
+        #self.backbone.load_state_dict(state, strict=True)
+        #self.backbone.to(DEVICE).eval()
 
-        self.head = LinearClassifier(self.backbone.num_features, num_classes=len(CLASS_NAMES))
-        if head_path:
-            logger.info("Loading classification head...")
-            self.head.load_state_dict(torch.load(head_path, map_location='cpu'), strict=True)
-        self.head.to(DEVICE).eval()
+        #self.head = LinearClassifier(self.backbone.num_features, num_classes=len(CLASS_NAMES))
+        #if head_path:
+        #    logger.info("Loading classification head...")
+        #    self.head.load_state_dict(torch.load(head_path, map_location='cpu'), strict=True)
+        #self.head.to(DEVICE).eval()
+        self.model = torch.jit.load(backbone_path, map_location="cpu").eval()
 
         # Build eval transform from model's own config
-        data_cfg = timm.data.resolve_model_data_config(self.backbone)
+        data_cfg = timm.data.resolve_model_data_config(self.model)
         self.preprocess = timm.data.create_transform(**data_cfg, is_training=False)
         self.input_size = data_cfg.get("input_size", (3, 224, 224))
 
         # Warm-up (optional, helps first-request latency on GPU)
         with torch.inference_mode(), torch.autocast(device_type=DEVICE, enabled=(DEVICE == 'cuda')):
             dummy = torch.zeros(1, *self.input_size, device=DEVICE)
-            _ = self.head(self.backbone(dummy))
+            _ = self.model(dummy)
         logger.info("Model ready.")
 
     def predict(self, img_pil: Image.Image, top_k: int = 3) -> Tuple[int, float, List[Tuple[int, float]]]:
@@ -72,8 +73,8 @@ class Predictor:
         tensor = self.preprocess(img).unsqueeze(0).to(DEVICE)
 
         with torch.inference_mode(), torch.autocast(device_type=DEVICE, enabled=(DEVICE == 'cuda')):
-            feats = self.backbone(tensor)
-            logits = self.head(feats)
+            logits = self.model(tensor)
+            #logits = self.head(feats)
             probs = logits.softmax(dim=1).squeeze(0)
 
         conf, idx = torch.max(probs, dim=0)
@@ -82,7 +83,7 @@ class Predictor:
         return idx.item(), conf.item(), topk
 
 # Single global predictor (thread-safe for inference)
-PREDICTOR = Predictor(BACKBONE_NAME, BACKBONE_PATH, HEAD_PATH)
+PREDICTOR = Predictor(BACKBONE_PATH)
 
 # --------------------------- Helpers ---------------------------
 def read_image_from_request() -> Image.Image:
@@ -125,7 +126,7 @@ def health():
 @app.route('/metadata', methods=['GET'])
 def metadata():
     return jsonify({
-        "model": BACKBONE_NAME,
+        #"model": BACKBONE_NAME,
         "device": DEVICE,
         "classes": CLASS_NAMES,
         "input_size": PREDICTOR.input_size,
