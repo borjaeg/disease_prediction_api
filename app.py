@@ -11,6 +11,7 @@ from PIL import Image, ImageOps
 import torch
 from torch import nn
 import timm
+import psutil
 
 # --------------------------- Config ---------------------------
 CLASS_NAMES: List[str] = ['Botrytis', 'Healthy', 'Oidium']
