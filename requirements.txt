@@ -3,3 +3,4 @@ gunicorn==22.0.0
 torch==2.7.0       # CPU wheels are fine on Render
 timm==1.0.20
 pillow==10.4.0
+psutil==7.1.2
