@@ -69,6 +69,8 @@ class Predictor:
         logger.info("Model ready.")
 
     def predict(self, img_pil: Image.Image, top_k: int = 3) -> Tuple[int, float, List[Tuple[int, float]]]:
+        process = psutil.Process()
+        mem_before = process.memory_info().rss / (1024 ** 2)  # MB
         img = ImageOps.exif_transpose(img_pil).convert('RGB')
         tensor = self.preprocess(img).unsqueeze(0).to(DEVICE)
 
@@ -80,6 +82,11 @@ class Predictor:
         conf, idx = torch.max(probs, dim=0)
         topk_conf, topk_idx = torch.topk(probs, k=min(top_k, probs.numel()))
         topk = [(i.item(), c.item()) for i, c in zip(topk_idx, topk_conf)]
+        
+        # --- Memory after inference ---
+        mem_after = process.memory_info().rss / (1024 ** 2)
+        logging.info(f"RAM usage: before={mem_before:.2f} MB | after={mem_after:.2f} MB | delta={mem_after - mem_before:.2f} MB")
+        
         return idx.item(), conf.item(), topk
 
 # Single global predictor (thread-safe for inference)
